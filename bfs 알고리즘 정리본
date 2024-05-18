@@ -1,0 +1,83 @@
+import os
+from collections import deque
+
+file_paths = [
+    r"C:\Users\home\Desktop\자구알\1호선.txt",
+    r"C:\Users\home\Desktop\자구알\2호선.txt",
+    r"C:\Users\home\Desktop\자구알\3호선.txt",
+    r"C:\Users\home\Desktop\자구알\4호선.txt",
+    r"C:\Users\home\Desktop\자구알\5호선.txt"
+]
+
+# 지하철 노선 정보를 파일에서 읽어오는 함수
+def read_subway_lines_from_files(file_paths):
+    subway_lines = {}
+    for file_path in file_paths:
+        line_number = int(os.path.basename(file_path)[0])
+        with open(file_path, 'r', encoding='utf-8') as file:
+            stations = [station.strip() for station in file.read().split('-')]
+            subway_lines[line_number] = stations
+    return subway_lines
+
+# 지하철 노선 정보를 기반으로 그래프 생성
+def build_graph(subway_lines):
+    graph = {}
+    for line, stations in subway_lines.items():
+        for i, station in enumerate(stations):
+            if station not in graph:
+                graph[station] = []
+            if i > 0:
+                graph[station].append((stations[i-1], line))
+            if i < len(stations) - 1:
+                graph[station].append((stations[i+1], line))
+    return graph
+
+# BFS를 사용하여 최단 경로 찾기
+def bfs_shortest_path(graph, start, goal):
+    visited = set()
+    queue = deque([([start], None, 0)])
+    
+    while queue:
+        path, prev_line, total_time = queue.popleft()
+        current = path[-1][0] if isinstance(path[-1], tuple) else path[-1]
+        
+        if current == goal:
+            return path, total_time
+        
+        for item in graph[current]:
+            next_station, line = item
+            if next_station not in visited or (next_station in visited and line != prev_line):
+                visited.add(next_station)
+                new_path = list(path)
+                new_path.append((next_station, line))
+                if line == prev_line or prev_line is None:
+                    queue.append((new_path, line, total_time + 2))
+                else:
+                    queue.append((new_path, line, total_time + 4))
+    return [], 0
+
+# 경로 출력
+def print_route_with_correct_line(route):
+    for item in route:
+        if isinstance(item, tuple):
+            station, line = item
+            print(f"{station} ({line}호선)")
+        else:
+            print(f"{item} (시작점)")
+
+# 경로 계산 및 출력하는 함수
+def calculate_route(start_station, end_station):
+    subway_lines = read_subway_lines_from_files(file_paths)
+    graph = build_graph(subway_lines)
+    route, total_time = bfs_shortest_path(graph, start_station, end_station)
+    
+    if route:
+        print_route_with_correct_line(route)
+        print("총 소요 시간:", total_time, "분")
+    else:
+        print("경로를 찾을 수 없습니다.")
+
+# 사용 예
+start_station = '소요산'
+end_station = '마천'
+calculate_route(start_station, end_station)
