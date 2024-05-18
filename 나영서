@@ -1,1 +1,32 @@
+# 호선별로 저장한 txt 파일 불러오기 및 저장
+subway_files = [
+    open('1호선 노선.txt', 'r'),
+    open('2호선 노선.txt', 'r'),
+    open('3호선 노선.txt', 'r'),
+    open('4호선 노선.txt', 'r'),
+    open('5호선 노선.txt', 'r')
+]
 
+# 노선들을 list로 저장
+subway_lines = [file.read().split(' - ') for file in subway_files]
+
+# 공백 제거 후 dictionary로 변환
+subway_dicts = [dict(zip(map(str.strip, line), range(1, len(line)))) for line in subway_lines]
+
+# 호선 정보 추가
+for line, subway_dict in zip(range(1, 6), subway_dicts):
+    subway_dict['line'] = line
+
+# 각 노선을 정렬한 dictionary 생성
+subway_sort_dicts = [dict.fromkeys(sorted(subway_dict.keys()), str(line)) for line, subway_dict in zip(range(1, 6), subway_dicts)]
+
+# 호선 정보 추가
+for subway_sort_dict in subway_sort_dicts:
+    subway_sort_dict['line'] = int(subway_sort_dict.get(next(iter(subway_sort_dict))))
+
+# 출력
+for i, subway_dict in enumerate(subway_dicts, start=1):
+    print(f"Line {i}:", subway_dict)
+
+for i, subway_sort_dict in enumerate(subway_sort_dicts, start=1):
+    print(f"Sorted Line {i}:", subway_sort_dict)
