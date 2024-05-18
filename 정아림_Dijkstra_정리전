@@ -1,0 +1,263 @@
+from networkx.algorithms.shortest_paths.generic import *
+from networkx.algorithms.shortest_paths.unweighted import *
+from networkx.algorithms.shortest_paths.weighted import *
+from networkx.algorithms.shortest_paths.astar import *
+from networkx.algorithms.shortest_paths.dense import *
+
+# 호선별로 저장한 txt 파일 불러오기 및 저장
+subway_file1 = open('1호선.txt', 'r') # 'r'은 읽기모드
+subway_file2 = open('2호선.txt', 'r')
+subway_file3 = open('3호선.txt', 'r')
+subway_file4 = open('4호선.txt', 'r')
+subway_file5 = open('5호선.txt', 'r')
+
+# 각 노선별로 list로 저장
+subway_list_line1 = subway_file1.read().split(' - ')
+subway_list_line2 = subway_file2.read().split(' - ')
+subway_list_line3 = subway_file3.read().split(' - ')
+subway_list_line4 = subway_file4.read().split(' - ')
+subway_list_line5 = subway_file5.read().split(' - ')
+
+# 노선 내에 공백 제거(list, 지하철 노선)
+subway_line1 = [i.strip() for i in subway_list_line1]
+subway_line2 = [i.strip() for i in subway_list_line2]
+subway_line3 = [i.strip() for i in subway_list_line3]
+subway_line4 = [i.strip() for i in subway_list_line4]
+subway_line5 = [i.strip() for i in subway_list_line5]
+
+# 지하철 수
+subway_num1 = [i for i in range(1, len(subway_line1))]
+subway_num2 = [i for i in range(1, len(subway_line2))]
+subway_num3 = [i for i in range(1, len(subway_line3))]
+subway_num4 = [i for i in range(1, len(subway_line4))]
+subway_num5 = [i for i in range(1, len(subway_line5))]
+
+# 나중에 출력 + 비교 쉽게하기 위해 만듦(dictionary)
+subway_dict_line1 = dict(zip(subway_line1, subway_num1))
+subway_dict_line2 = dict(zip(subway_line2, subway_num2))
+subway_dict_line3 = dict(zip(subway_line3, subway_num3))
+subway_dict_line4 = dict(zip(subway_line4, subway_num4))
+subway_dict_line5 = dict(zip(subway_line5, subway_num5))
+
+subway_dict_line1['line']=1
+subway_dict_line2['line']=2
+subway_dict_line3['line']=3
+subway_dict_line4['line']=4
+subway_dict_line5['line']=5
+
+print(subway_dict_line1)
+print(subway_dict_line2)
+print(subway_dict_line3)
+print(subway_dict_line4)
+print(subway_dict_line5)
+
+#Dijkstra
+
+"""
+기본 정보: 
+데이크스트라 알고리즘은 프림 알고리즘과 매우 유사합니다.
+탐욕 알고리즘에 기반하고 있습니다.
+데이크스트라 알고리즘의 가장 중요한 특징은 그래프에 음수 가중치를 인정하지 않는다는 것입니다.
+
+데이크스트라 알고리즘을 구현하려면 S라는 집합과 distance라는 배열이 필요합니다.
+집합 S는 최단 경로가 발견된 정점 집합으로,
+최단 경로를 찾고 있는 그래프 G의 정접 집합 V(G)와 같아질 때까지 커집니다.
+
+또 어떤 정점 v를 인덱스로 하는 distance[v] 값은 출발 정점에서 집합 S에 있는 정점만 거쳐
+목적지 v에 도달하는 경로 길이입니다.
+점점 커지는 집합 S와 계속 변경되는 최단 경로 distance는 어딘가 낯이 익습니다.
+눈치챘나요? 프림 알고리즘에서 자라나는 최소 비용 신장 트리의 정점 집합 TV와
+가장 낮은 가중치를 저장해 놓은 w_list가 자연스럽게 떠오르는군요. 맞습니다.
+집합과 배열 의미는 다르지만 구현이 매우 비슷해질 것임을 추측할 수 있습니다.
+그것은 다음 절에서 좀 더 살펴보도록 하죠.
+데이크스트라 알고리즘에서 중요한 연산은 relax입니다. 먼저 이 연산을 알아보겠습니다.
+
+from heapq import heappush, heappop
+
+class MinPriorityQueue:
+    def __init__(self):
+        self.heap = []
+
+    def push(self, item):
+        heappush(self.heap, item)
+
+    def pop(self):
+        return heappop(self.heap)
+
+class ShortestPath:
+    def __init__(self, s, distance, p):
+        self.source = s
+        self.distance = distance
+        self.p = p
+
+    def print_shortest_path(self, dest):
+        if self.source == dest:
+            print(dest, end=" ")
+            return
+        if sp.p[dest] != None:
+            self.print_shortest_path(self.p[dest])
+        else:
+            print("There is no path")
+            return
+        print(dest, end=" ")
+
+def dijkstra(self, s):
+        distance = [self.BIG_NUMBER for _ in range(self.vertex_num)]
+        p = [None for _ in range(self.vertex_num)]
+
+        S = set()
+        pq = MinPriorityQueue()
+        for i in range(self.vertex_num):
+            pq.push((self.BIG_NUMBER, i))
+
+        distance[s] = 0
+        pq.push((0, s))
+
+        while len(S) < self.vertex_num:
+            d, v = pq.pop()
+            if distance[v] != d:
+                continue
+
+            S.add(v)
+
+            adj_v = self.adjacent_set(v)
+            for u, w_u_v in adj_v:
+                if u not in S and distance[u] > distance[v]+w_u_v:
+                    distance[u] = distance[v] + w_u_v
+                    p[u] = v
+                    pq.push((distance[u], u))
+
+        sp = ShortestPath(s, distance, p)
+        return sp
+
+    def adjacent_set(self, v):
+        adj_v = []
+        for i in range(self.vertex_num):
+            w = self.adj_matrix[v][i]
+            if w:
+                adj_v.append((i, w))
+        return adj_v
+"""
+
+
+
+import networkx as nx
+import time
+import heapq
+
+# 지하철 노선 데이터
+lines = {
+    '1': subway_line1,
+    '2': subway_line2,
+    '3': subway_line3,
+    '4': subway_line4,
+    '5': subway_line5
+}
+
+# 그래프 G 생성
+G = nx.Graph()
+
+def dijkstra(G, start, end):
+    # 거리 정보를 무한대로 초기화
+    distances = {vertex: float('infinity') for vertex in G.nodes}
+    # 시작 노드의 거리는 0
+    distances[start] = 0
+
+    # 우선순위 큐 초기화
+    priority_queue = [(0, start)]
+    path = {}
+
+    while priority_queue:
+        # 현재 노드와 거리 가져오기
+        current_distance, current_vertex = heapq.heappop(priority_queue)
+
+        # 이미 처리된 노드는 무시
+        if current_distance > distances[current_vertex]:
+            continue
+
+        # 이웃한 노드 처리
+        for neighbor, weight in G[current_vertex].items():
+            distance = current_distance + weight['weight']
+
+            # 더 짧은 경로를 찾은 경우 업데이트
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                heapq.heappush(priority_queue, (distance, neighbor))
+                path[neighbor] = current_vertex
+
+    # 최단 경로 재구성
+    shortest_path = []
+    current_node = end
+    while current_node != start:
+        shortest_path.append(current_node)
+        current_node = path[current_node]
+    shortest_path.append(start)
+    shortest_path.reverse()
+
+    return shortest_path, distances[end]
+
+# 역들 사이의 연결 추가(소요시간 = 2 min)
+for line, stations in lines.items():
+    for i in range(len(stations)-1):
+        G.add_edge((line, stations[i]), (line, stations[i+1]), weight=2)
+
+# 환승 역 찾기
+transfer_stations = {}
+for line, stations in lines.items():
+    for station in stations:
+        if station not in transfer_stations:
+            transfer_stations[station] = []
+        transfer_stations[station].append(line)
+
+# 환승 역에 환승 시간 추가 (환승시간 = 2 min)
+for station, lines in transfer_stations.items():
+    if len(lines) > 1:
+        for i in range(len(lines)):
+            for j in range(i + 1, len(lines)):
+                G.add_edge((lines[i], station), (lines[j], station), weight=10)
+
+# 최단 경로에서 환승 정보 포함하여 출력
+def print_path_with_transfers(path):
+    # 경로를 출력하기 위한 문자열 초기화
+    path_str = ""
+    transfer_info = []
+
+    # 경로를 순회하며 환승 여부 확인
+    for i in range(len(path) - 1):
+        current_station, next_station = path[i], path[i+1]
+        current_line, next_line = current_station[0], next_station[0]
+
+        # 노선이 바뀌는 지점(환승) 확인
+        if current_line != next_line:
+            transfer_info.append((current_line, next_line, current_station[1]))
+
+        # 경로 문자열에 현재 역 추가
+        path_str += f"({current_station[0]},{current_station[1]}) -> "
+
+    # 마지막 역 추가
+    path_str += f"({path[-1][0]},{path[-1][1]})"
+
+    # 경로 출력
+    print("최단 경로:", path_str)
+
+    # 환승 정보 출력
+    for transfer in transfer_info:
+        print(f"환승 정보: {transfer[2]}에서 {transfer[0]}호선에서 {transfer[1]}호선으로 환승하기")
+
+# Dijkstra 알고리즘으로 최단 경로 찾기
+start_station = ('1', '시청')
+end_station = ('5', '동대문역사문화공원')
+
+#시작시간 측정
+start_time = time.time()
+
+shortest_path, shortest_path_length = dijkstra(G, start_station, end_station)
+print_path_with_transfers(shortest_path)
+#종료시간 측정
+end_time = time.time()
+
+#총 실행 시간:
+execution_time = end_time - start_time
+
+print("이동 시간:",shortest_path_length,"분")
+print("실행 시간: {:.4f}초".format(execution_time))
