@@ -1,0 +1,82 @@
+import heapq
+
+# 노선 데이터 읽기
+def read_subway_lines(filename):
+    with open(filename, 'r', encoding='utf-8') as f:
+        return [line.strip() for line in f.read().split(' - ')]
+
+# 노선 데이터
+subway_line1 = read_subway_lines('1호선 노선.txt')
+subway_line2 = read_subway_lines('2호선 노선.txt')
+subway_line3 = read_subway_lines('3호선 노선.txt')
+subway_line4 = read_subway_lines('4호선 노선.txt')
+subway_line5 = read_subway_lines('5호선 노선.txt')
+
+lines = [subway_line1, subway_line2, subway_line3, subway_line4, subway_line5]
+line_numbers = [1, 2, 3, 4, 5]
+
+# 그래프와 역-노선 매핑 구성
+graph = {}
+station_to_lines = {}
+
+for line_number, line in zip(line_numbers, lines):
+    for i in range(len(line)):
+        station = (line_number, line[i])
+        if station not in graph:
+            graph[station] = []
+        if i > 0:
+            prev_station = (line_number, line[i-1])
+            graph[station].append((prev_station, 2))  # 이동 시간 2분
+            graph[prev_station].append((station, 2))
+        if line[i] not in station_to_lines:
+            station_to_lines[line[i]] = []
+        station_to_lines[line[i]].append(line_number)
+
+# 환승 정보 추가
+for station_name, line_numbers in station_to_lines.items():
+    if len(line_numbers) > 1:
+        for i in range(len(line_numbers)):
+            for j in range(i + 1, len(line_numbers)):
+                graph[(line_numbers[i], station_name)].append(((line_numbers[j], station_name), 2))
+                graph[(line_numbers[j], station_name)].append(((line_numbers[i], station_name), 2))
+
+# A* 알고리즘 구현
+def astar(graph, start, end):
+    queue = [(0, 0, start)]  # (총 시간, 환승 횟수, 현재 노드)
+    distances = {node: float('inf') for node in graph}
+    distances[start] = 0
+    previous_nodes = {node: None for node in graph}
+
+    while queue:
+        current_total_time, current_transfers, current_node = heapq.heappop(queue)
+
+        if current_node == end:
+            path = []
+            while current_node is not None:
+                path.append(current_node)
+                current_node = previous_nodes[current_node]
+            path = path[::-1]
+            return current_total_time, current_transfers, path
+
+        for neighbor, weight in graph[current_node]:
+            total_time = current_total_time + weight
+            transfers = current_transfers + (neighbor[0] != current_node[0])  # 환승 횟수 업데이트
+            priority = total_time + transfers  # 휴리스틱 함수
+
+            if total_time < distances[neighbor] or (total_time == distances[neighbor] and transfers < current_transfers):
+                distances[neighbor] = total_time
+                previous_nodes[neighbor] = current_node
+                heapq.heappush(queue, (total_time, transfers, neighbor))
+
+# 시작 역과 도착 역 지정
+start_station = (1, '소요산')
+end_station = (5, '마천')
+
+# 최단 경로 및 최소 환승 횟수 찾기
+shortest_time, min_transfers, path = astar(graph, start_station, end_station)
+
+# 경로 출력
+path_str = " -> ".join([f"({line}, {station})" for line, station in path])
+print(f"최단 경로의 총 시간: {shortest_time}분")
+print(f"최소 환승 횟수: {min_transfers}")
+print(f"이동 경로: {path_str}")
